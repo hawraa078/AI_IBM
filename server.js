@@ -110,28 +110,29 @@ async function callAIServiceWithRetry(userMessage, images, { retries = 3, timeou
 }
 
 // ---------- /analyze ----------
+// Accepts a lean payload directly from the Figma plugin UI:
+//   { prompt: string, image: string }  — image is a Base64-encoded PNG
+// No session is required for this endpoint; the image is sent inline with every request.
 app.post('/analyze', async (req, res) => {
   try {
-    const { userId, userMessage, imageBytes, mimeType } = req.body;
-    if (!userId || !imageBytes || !userMessage) {
-      return res.status(400).json({ error: 'userId, userMessage and imageBytes are required' });
+    const { prompt, image } = req.body;
+
+    // --- Input validation ---
+    if (!prompt || typeof prompt !== 'string' || prompt.trim() === '') {
+      return res.status(400).json({ error: '`prompt` is required and must be a non-empty string.' });
     }
+    if (!image || typeof image !== 'string') {
+      return res.status(400).json({ error: '`image` is required and must be a Base64 string.' });
+    }
+
+    // --- API key guard ---
     if (!apiKey) {
       return res.status(503).json({ error: 'Server misconfiguration: GEMINI_API_KEY is not set.' });
     }
-    const session = sessionCache.get(userId);
-    if (!session) {
-      return res.status(404).json({
-        error: 'No session found for this user. Upload the brand kit image first via /session/init',
-      });
-    }
-    const draftBase64 = bufferArrayToBase64(imageBytes);
-    const finalMimeType = mimeType || 'image/jpeg';
-    const images = [
-      { mimeType: finalMimeType, data: session.brandKitBase64 },
-      { mimeType: finalMimeType, data: draftBase64 },
-    ];
-    const result = await callAIServiceWithRetry(userMessage, images, { retries: 3, timeoutMs: 15000 });
+
+    // Build a single-image payload — the PNG exported from the Figma selection
+    const images = [{ mimeType: 'image/png', data: image }];
+    const result = await callAIServiceWithRetry(prompt.trim(), images, { retries: 3, timeoutMs: 15000 });
     res.json(result);
   } catch (err) {
     console.error('Error in /analyze:', err.message);

@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Styles master</title>
+  <style>
+    /* -----------------------------------------------------------------------
+       Design tokens — edit these variables to retheme the entire UI.
+    ----------------------------------------------------------------------- */
+    :root {
+      --bg-base:        #0f172a;   /* page background                        */
+      --bg-surface:     #1e293b;   /* card / chat-window surface             */
+      --bg-input:       #0f172a;   /* input field background                 */
+      --border:         #334155;   /* subtle borders                         */
+      --text-primary:   #f1f5f9;   /* main text                              */
+      --text-muted:     #94a3b8;   /* placeholder / muted labels             */
+      --accent-purple:  #8b5cf6;   /* user bubble / primary accent           */
+      --accent-cyan:    #06b6d4;   /* send button / header highlight         */
+      --bubble-ai:      #1e3a5f;   /* AI bubble background                   */
+      --error-red:      #f43f5e;   /* error bubble accent                    */
+      --radius-lg:      14px;
+      --radius-md:      10px;
+      --radius-sm:      6px;
+      --transition:     0.18s ease;
+    }
+
+    /* -----------------------------------------------------------------------
+       Reset & base
+    ----------------------------------------------------------------------- */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 13px;
+      line-height: 1.55;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* -----------------------------------------------------------------------
+       Chat window — fills the entire plugin viewport
+    ----------------------------------------------------------------------- */
+    #chatWindow {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    /* -----------------------------------------------------------------------
+       Header
+    ----------------------------------------------------------------------- */
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      background: var(--bg-base);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .chat-header-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .chat-header-text h1 {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: 0.02em;
+    }
+
+    .chat-header-text p {
+      font-size: 11px;
+      color: var(--accent-cyan);
+    }
+
+    /* Status dot */
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #22c55e;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    /* -----------------------------------------------------------------------
+       Message list — auto-scrolls to the latest message
+    ----------------------------------------------------------------------- */
+    #chatMessages {
+      flex: 1;
+      padding: 14px 12px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      /* Custom scrollbar */
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+    #chatMessages::-webkit-scrollbar       { width: 4px; }
+    #chatMessages::-webkit-scrollbar-track { background: transparent; }
+    #chatMessages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* -----------------------------------------------------------------------
+       Chat bubbles
+    ----------------------------------------------------------------------- */
+    .bubble-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+    }
+    .bubble-row.user  { flex-direction: row-reverse; }
+    .bubble-row.ai    { flex-direction: row; }
+
+    .bubble-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+    .bubble-row.user  .bubble-avatar { background: var(--accent-purple); }
+    .bubble-row.ai    .bubble-avatar { background: var(--bubble-ai); }
+
+    .bubble {
+      max-width: 78%;
+      padding: 9px 13px;
+      border-radius: var(--radius-md);
+      font-size: 12.5px;
+      line-height: 1.5;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+    .user-bubble {
+      background: var(--accent-purple);
+      color: #fff;
+      border-bottom-right-radius: 3px;
+    }
+    .ai-bubble {
+      background: var(--bubble-ai);
+      color: var(--text-primary);
+      border-bottom-left-radius: 3px;
+      border: 1px solid rgba(99,179,237,0.12);
+    }
+    .error-bubble {
+      background: rgba(244, 63, 94, 0.15);
+      color: #fda4af;
+      border: 1px solid rgba(244, 63, 94, 0.35);
+      border-bottom-left-radius: 3px;
+    }
+
+    /* -----------------------------------------------------------------------
+       Typing / loading indicator
+    ----------------------------------------------------------------------- */
+    .typing-indicator {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 10px 13px;
+    }
+    .typing-indicator span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      animation: bounce 1.2s infinite ease-in-out;
+    }
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
+      40%            { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* -----------------------------------------------------------------------
+       Input area — pinned to the bottom
+    ----------------------------------------------------------------------- */
+    .chat-input-area {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--bg-base);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    #userInput {
+      flex: 1;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      outline: none;
+      font-size: 12.5px;
+      font-family: inherit;
+      resize: none;
+      line-height: 1.4;
+      max-height: 100px;
+      overflow-y: auto;
+      transition: border-color var(--transition);
+    }
+    #userInput::placeholder { color: var(--text-muted); }
+    #userInput:focus { border-color: var(--accent-cyan); }
+
+    #sendBtn {
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+      border: none;
+      color: #fff;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: opacity var(--transition), transform var(--transition);
+    }
+    #sendBtn:hover:not(:disabled) { opacity: 0.88; transform: scale(1.07); }
+    #sendBtn:disabled              { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* Send icon SVG */
+    #sendBtn svg { width: 16px; height: 16px; fill: #fff; }
+
+    /* -----------------------------------------------------------------------
+       Hint text below input
+    ----------------------------------------------------------------------- */
+    .input-hint {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 0 12px 8px;
+      background: var(--bg-base);
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ======================================================================
+       Chat window
+  ====================================================================== -->
+  <div id="chatWindow">
+
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="chat-header-avatar">✦</div>
+      <div class="chat-header-text">
+        <h1>Styles master</h1>
+        <p>AI Design Assistant</p>
+      </div>
+      <div class="status-dot" title="Connected"></div>
+    </div>
+
+    <!-- Message list -->
+    <div id="chatMessages">
+      <!-- Initial greeting bubble -->
+      <div class="bubble-row ai">
+        <div class="bubble-avatar">✦</div>
+        <div class="bubble ai-bubble">
+          Hi! I'm your AI design assistant. Select a layer in Figma, type your question, and hit Send — I'll analyse it for you.
+        </div>
+      </div>
+    </div>
+
+    <!-- Fixed input area -->
+    <div class="chat-input-area">
+      <textarea
+        id="userInput"
+        rows="1"
+        placeholder="Ask about your design…"
+        autocomplete="off"
+        spellcheck="true"
+      ></textarea>
+      <button id="sendBtn" title="Send (Enter)">
+        <!-- Paper-plane icon -->
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Keyboard shortcut hint -->
+    <div class="input-hint">Press Enter to send · Shift+Enter for new line</div>
+
+  </div><!-- /#chatWindow -->
+
+  <script>
+    /**
+     * Styles master — Plugin UI script
+     *
+     * Responsibilities:
+     *  1. Accept user text input and dispatch a 'request-image' message to
+     *     the Figma sandbox (code.js).
+     *  2. Receive the Base64-encoded PNG back from the sandbox.
+     *  3. POST { prompt, image } to the backend /analyze endpoint.
+     *  4. Render the AI's structured JSON response as a chat bubble.
+     *  5. Provide robust error handling and a visual loading state throughout.
+     */
+
+    // -------------------------------------------------------------------------
+    // Constants
+    // -------------------------------------------------------------------------
+
+    /** Backend endpoint — update this if you deploy the server remotely. */
+    const BACKEND_URL = 'http://localhost:3000/analyze';
+
+    // -------------------------------------------------------------------------
+    // DOM references
+    // -------------------------------------------------------------------------
+
+    const chatMessages = /** @type {HTMLElement} */ (document.getElementById('chatMessages'));
+    const userInput    = /** @type {HTMLTextAreaElement} */ (document.getElementById('userInput'));
+    const sendBtn      = /** @type {HTMLButtonElement} */ (document.getElementById('sendBtn'));
+
+    // -------------------------------------------------------------------------
+    // State
+    // -------------------------------------------------------------------------
+
+    /** Holds the user's pending message while we wait for the image from the sandbox. */
+    let pendingPrompt = '';
+
+    /** Tracks whether a request is currently in-flight to prevent double-sends. */
+    let isFetching = false;
+
+    // -------------------------------------------------------------------------
+    // Utility: auto-resize textarea as the user types
+    // -------------------------------------------------------------------------
+
+    userInput.addEventListener('input', () => {
+      userInput.style.height = 'auto';
+      userInput.style.height = Math.min(userInput.scrollHeight, 100) + 'px';
+    });
+
+    // -------------------------------------------------------------------------
+    // Utility: scroll the message list to the very bottom
+    // -------------------------------------------------------------------------
+
+    function scrollToBottom() {
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // -------------------------------------------------------------------------
+    // Utility: append a chat bubble to the message list
+    // -------------------------------------------------------------------------
+
+    /**
+     * @param {string}  text    - Message content (plain text or formatted)
+     * @param {'user'|'ai'|'error'} role - Controls visual styling
+     * @returns {HTMLElement} The created bubble element
+     */
+    function addBubble(text, role) {
+      const row = document.createElement('div');
+      row.className = `bubble-row ${role === 'user' ? 'user' : 'ai'}`;
+
+      const avatar = document.createElement('div');
+      avatar.className = 'bubble-avatar';
+      avatar.textContent = role === 'user' ? 'U' : '✦';
+
+      const bubble = document.createElement('div');
+      bubble.className = `bubble ${role}-bubble`;
+      bubble.textContent = text;
+
+      row.appendChild(avatar);
+      row.appendChild(bubble);
+      chatMessages.appendChild(row);
+      scrollToBottom();
+      return bubble;
+    }
+
+    // -------------------------------------------------------------------------
+    // Utility: show / remove the animated typing indicator
+    // -------------------------------------------------------------------------
+
+    let typingRow = null;
+
+    function showTyping() {
+      if (typingRow) return; // already visible
+      typingRow = document.createElement('div');
+      typingRow.className = 'bubble-row ai';
+
+      const avatar = document.createElement('div');
+      avatar.className = 'bubble-avatar';
+      avatar.textContent = '✦';
+
+      const indicator = document.createElement('div');
+      indicator.className = 'bubble ai-bubble typing-indicator';
+      indicator.innerHTML = '<span></span><span></span><span></span>';
+
+      typingRow.appendChild(avatar);
+      typingRow.appendChild(indicator);
+      chatMessages.appendChild(typingRow);
+      scrollToBottom();
+    }
+
+    function hideTyping() {
+      if (typingRow) {
+        typingRow.remove();
+        typingRow = null;
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // Utility: lock / unlock the UI during a fetch
+    // -------------------------------------------------------------------------
+
+    function setLoading(loading) {
+      isFetching     = loading;
+      sendBtn.disabled = loading;
+      userInput.disabled = loading;
+    }
+
+    // -------------------------------------------------------------------------
+    // Utility: format the AI JSON response into a readable string
+    // -------------------------------------------------------------------------
+
+    /**
+     * Converts the structured JSON returned by the backend into a human-
+     * readable text string for display in the chat bubble.
+     *
+     * @param {object} data - Parsed JSON from the /analyze endpoint
+     * @returns {string}
+     */
+    function formatAIResponse(data) {
+      // If the server returned a plain error string, surface it directly
+      if (data.error) return `⚠️ ${data.error}`;
+
+      const lines = [];
+
+      // Global message is always present
+      if (data.global_message) lines.push(data.global_message);
+
+      // Evaluation branch
+      if (data.intent === 'evaluation' && data.evaluation_data) {
+        const ev = data.evaluation_data;
+        if (typeof ev.confidence_score === 'number') {
+          lines.push(`\nConfidence: ${ev.confidence_score}%`);
+        }
+        if (Array.isArray(ev.errors) && ev.errors.length > 0) {
+          lines.push('\nIssues found:');
+          ev.errors.forEach((e, i) => {
+            lines.push(`  ${i + 1}. [${e.category}] ${e.issue}`);
+            if (e.suggestion) lines.push(`     → ${e.suggestion}`);
+          });
+        } else if (ev.errors && ev.errors.length === 0) {
+          lines.push('\n✅ No issues detected.');
+        }
+      }
+
+      // Asset extraction branch
+      if (data.intent === 'asset_extraction' && data.asset_data) {
+        const as = data.asset_data;
+        if (as.extracted_prompt) lines.push(`\nPrompt: ${as.extracted_prompt}`);
+        if (as.target_tool)      lines.push(`Tool:   ${as.target_tool}`);
+      }
+
+      return lines.join('\n').trim() || JSON.stringify(data, null, 2);
+    }
+
+    // -------------------------------------------------------------------------
+    // Core: send message flow
+    // -------------------------------------------------------------------------
+
+    /**
+     * Entry point for every user message.
+     * Stores the prompt then asks the sandbox to export the current selection.
+     */
+    function handleSend() {
+      const text = userInput.value.trim();
+      if (!text || isFetching) return;
+
+      // Store prompt so the image-ready handler can pair it with the image
+      pendingPrompt = text;
+
+      // Render the user's message in the chat
+      addBubble(text, 'user');
+
+      // Reset input field
+      userInput.value = '';
+      userInput.style.height = 'auto';
+
+      // Show typing indicator while waiting for the sandbox to export the PNG
+      setLoading(true);
+      showTyping();
+
+      /**
+       * Ask the Figma sandbox to export the currently selected node as PNG.
+       * The sandbox will reply with { type: 'image-ready', base64: '...' }
+       * or { type: 'error', message: '...' } — both handled in onmessage below.
+       */
+      parent.postMessage({ pluginMessage: { type: 'request-image' } }, '*');
+    }
+
+    // Keyboard shortcut: Enter sends, Shift+Enter inserts a newline
+    userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    });
+
+    sendBtn.addEventListener('click', handleSend);
+
+    // -------------------------------------------------------------------------
+    // Core: receive messages from the Figma sandbox
+    // -------------------------------------------------------------------------
+
+    window.addEventListener('message', async (event) => {
+      const msg = event.data && event.data.pluginMessage;
+      if (!msg) return;
+
+      // ------------------------------------------------------------------
+      // 'image-ready': the sandbox successfully exported a PNG
+      // ------------------------------------------------------------------
+      if (msg.type === 'image-ready') {
+        const base64 = msg.base64;
+        const prompt = pendingPrompt;
+        pendingPrompt = '';
+
+        // Safety check — should never occur, but guard anyway
+        if (!base64 || !prompt) {
+          hideTyping();
+          setLoading(false);
+          addBubble('⚠️ Missing image or prompt. Please try again.', 'error');
+          return;
+        }
+
+        // Dispatch the analysis request to the backend
+        try {
+          const response = await fetch(BACKEND_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, image: base64 }),
+          });
+
+          // Parse the JSON response (even on non-2xx to surface server errors)
+          const data = await response.json();
+
+          hideTyping();
+
+          if (!response.ok) {
+            // Non-2xx HTTP status — surface the server's error message
+            addBubble(`⚠️ Server error ${response.status}: ${data.error || 'Unknown error'}`, 'error');
+          } else {
+            // Successful analysis — format and display the result
+            addBubble(formatAIResponse(data), 'ai');
+          }
+
+        } catch (fetchError) {
+          // Network failure or JSON parse error
+          hideTyping();
+          addBubble(
+            '❌ Could not reach the server. Make sure the backend is running on localhost:3000.',
+            'error',
+          );
+          console.error('[Styles master] Fetch error:', fetchError);
+        } finally {
+          setLoading(false);
+        }
+
+        return;
+      }
+
+      // ------------------------------------------------------------------
+      // 'error': the sandbox reported a problem (no selection, export failed)
+      // ------------------------------------------------------------------
+      if (msg.type === 'error') {
+        hideTyping();
+        setLoading(false);
+        addBubble(`⚠️ ${msg.message}`, 'error');
+        return;
+      }
+    });
+  </script>
+
+</body>
+</html>

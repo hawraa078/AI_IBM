@@ -1,5 +1,5 @@
 {
-  "name": "Brand Guardian A",
+  "name": "Styles master",
   "id": "1662576911987611234",
   "api": "1.0.0",
   "main": "code.js",
@@ -15,7 +15,9 @@
   "ui": "ui.html",
   "networkAccess": {
     "allowedDomains": [
-      "none"
-    ]
+      "http://localhost:3000",
+      "https://*"
+    ],
+    "devAllowedDomains": ["http://localhost:3000"]
   }
 }

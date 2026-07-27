@@ -2,10 +2,20 @@
   "compilerOptions": {
     "target": "es2020",
     "lib": ["es2020"],
+    "module": "commonjs",
     "strict": true,
+    "outDir": ".",
+    "rootDir": ".",
+    "noEmitOnError": true,
     "typeRoots": [
       "./node_modules/@types",
       "./node_modules/@figma"
     ]
-  }
+  },
+  "include": [
+    "code.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
