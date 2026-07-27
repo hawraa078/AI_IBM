@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      background: #0f172a;
+      color: #f8fafc;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      margin: 0;
+      padding: 15px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 📁 المجلدات ولوحة الألوان والخطوط */
+    .folder-container {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .folder-title {
+      font-weight: bold;
+      color: #a855f7;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+    }
+    .palette-panel {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+    }
+    .color-box {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    .font-badge {
+      background: #334155;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+    }
+
+    /* 🤖 الأيقونة العائمة ونافذة الشات */
+    #chatToggleBtn {
+      position: fixed;
+      bottom: 15px;
+      right: 15px;
+      background: linear-gradient(135deg, #a855f7, #06b6d4);
+      color: white;
+      border: none;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      font-size: 22px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(168, 85, 247, 0.5);
+      z-index: 100;
+    }
+
+    #chatWindow {
+      position: fixed;
+      bottom: 75px;
+      right: 15px;
+      width: 340px;
+      height: 420px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      z-index: 99;
+    }
+    .hidden { display: none !important; }
+
+    .chat-header {
+      padding: 12px;
+      background: #0f172a;
+      border-top-left-radius: 16px;
+      border-top-right-radius: 16px;
+      font-weight: bold;
+      color: #38bdf8;
+    }
+
+    #chatMessages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* 💬 فقاعات الدردشة */
+    .bubble {
+      max-width: 80%;
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+    .user-bubble {
+      align-self: flex-end;
+      background: #8b5cf6;
+      color: white;
+      border-bottom-right-radius: 2px;
+    }
+    .ai-bubble {
+      align-self: flex-start;
+      background: #334155;
+      color: #f1f5f9;
+      border-bottom-left-radius: 2px;
+    }
+
+    .chat-input-area {
+      display: flex;
+      padding: 10px;
+      gap: 6px;
+      background: #0f172a;
+      border-bottom-left-radius: 16px;
+      border-bottom-right-radius: 16px;
+    }
+    #userInput {
+      flex: 1;
+      background: #1e293b;
+      border: 1px solid #475569;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 8px;
+      outline: none;
+    }
+    #sendBtn {
+      background: #06b6d4;
+      border: none;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 📁 المجلدات ولوحة الألوان والخطوط -->
+  <div class="folder-container">
+    <div class="folder-title" onclick="toggleFolder()">
+      📁 مجلد الهوية البصرية <span>▼</span>
+    </div>
+    <div id="folderPanel" class="palette-panel">
+      <!-- مربعات الألوان -->
+      <div class="color-box" style="background: #8b5cf6;" onclick="applyColor('#8b5cf6')"></div>
+      <div class="color-box" style="background: #06b6d4;" onclick="applyColor('#06b6d4')"></div>
+      <div class="color-box" style="background: #f43f5e;" onclick="applyColor('#f43f5e')"></div>
+      <!-- الخطوط -->
+      <span class="font-badge">Inter</span>
+      <span class="font-badge">Cairo</span>
+    </div>
+  </div>
+
+  <!-- 💬 أزرار ونافذة الشات بوت العائم -->
+  <button id="chatToggleBtn">💬</button>
+
+  <div id="chatWindow" class="hidden">
+    <div class="chat-header">Brand Guardian AI 🛡️</div>
+    <div id="chatMessages">
+      <div class="bubble ai-bubble">أهلاً بك! أنا مساعدك الذكي. كيف أساعدك في تصميمك اليوم؟</div>
+    </div>
+    <div class="chat-input-area">
+      <input type="text" id="userInput" placeholder="اكتب سؤالك هنا..." />
+      <button id="sendBtn">إرسال</button>
+    </div>
+  </div>
+
+  <script>
+    // 📁 1. فتح وإغلاق المجلد وتطبيق اللون
+    function toggleFolder() {
+      document.getElementById('folderPanel').classList.toggle('hidden');
+    }
+    function applyColor(hexColor) {
+      parent.postMessage({ pluginMessage: { type: 'apply-color', color: hexColor } }, '*');
+    }
+
+    // 🤖 2. الأيقونة العائمة للشات
+    const chatToggleBtn = document.getElementById('chatToggleBtn');
+    const chatWindow = document.getElementById('chatWindow');
+    chatToggleBtn.onclick = () => {
+      chatWindow.classList.toggle('hidden');
+    };
+
+    // 💬 3. دالة إضافة فقاعات الدردشة مع التمرير للأسفل
+    const chatMessages = document.getElementById('chatMessages');
+    function addBubble(text, isUser) {
+      const bubble = document.createElement('div');
+      bubble.className = `bubble ${isUser ? 'user-bubble' : 'ai-bubble'}`;
+      bubble.innerText = text;
+      chatMessages.appendChild(bubble);
+      chatMessages.scrollTop = chatMessages.scrollHeight; // نزول للشاشة تلقائياً
+    }
+
+    // 🔗 4. عند إرسال الرسالة والربط بالـ API
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    sendBtn.onclick = handleSend;
+    userInput.onkeypress = (e) => { if(e.key === 'Enter') handleSend(); };
+
+    function handleSend() {
+      const text = userInput.value.trim();
+      if (!text) return;
+
+      addBubble(text, true); // إظهار رسالة المستخدم
+      userInput.value = '';
+
+      // طلب التقاط الصورة من code.js
+      parent.postMessage({ 
+        pluginMessage: { type: 'capture-and-send', userPrompt: text } 
+      }, '*');
+    }
+
+    // استقبال رد code.js وإرسال الطلب لسيرفر حوراء
+    window.onmessage = async (event) => {
+      const msg = event.data.pluginMessage;
+      if (!msg) return;
+
+      if (msg.type === 'image-captured') {
+        addBubble("⏳ جاري التحليل مع الذكاء الاصطناعي...", false);
+
+        try {
+          // دالة fetch المستهدفة لسيرفر حوراء
+          const response = await fetch('http://localhost:3000/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              prompt: msg.userPrompt,
+              image: msg.base64 // Base64 للصورة (أو null إذا لم يحدد عنصر)
+            })
+          });
+
+          const data = await response.json();
+          
+          // مسح رسالة الانتظار الأخيرة وإظهار الرد الحقيقي
+          chatMessages.lastChild.remove();
+          
+          // استخراج النص القادم من سيرفر حوراء
+          const aiReply = data.result || data.message || "تم استلام الرد من السيرفر بنجاح!";
+          addBubble(aiReply, false);
+
+        } catch (err) {
+          chatMessages.lastChild.remove();
+          addBubble("❌ تعذر الاتصال بالسيرفر. تأكدي من تشغيل سيرفر حوراء المحلي (localhost:3000)!", false);
+          console.error(err);
+        }
+      }
+    };
+  </script>
+</body>
+</html>
