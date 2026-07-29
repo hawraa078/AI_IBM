@@ -1,23 +1,17 @@
 {
-  "name": "Styles master",
+  "name": "DesignMate AI",
   "id": "1662576911987611234",
   "api": "1.0.0",
+  "permissions": ["currentuser"],
   "main": "code.js",
   "capabilities": [],
   "enableProposedApi": false,
   "documentAccess": "dynamic-page",
-  "editorType": [
-    "figma",
-    "figjam",
-    "slides",
-    "buzz"
-  ],
+  "editorType": ["figma", "figjam", "slides"],
   "ui": "ui.html",
   "networkAccess": {
-    "allowedDomains": [
-      "http://localhost:3000",
-      "https://*"
-    ],
-    "devAllowedDomains": ["http://localhost:3000"]
+    "allowedDomains": ["http://localhost:3000"],
+    "devAllowedDomains": ["http://localhost:3000"],
+    "reasoning": "Communicates with a local Express backend on port 3000 that proxies requests to the Gemini AI API for design analysis and chat responses."
   }
 }

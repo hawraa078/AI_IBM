@@ -5,147 +5,138 @@ const { v4: uuidv4 } = require('uuid');
 const fetch = require('node-fetch');
 
 const apiKey = process.env.GEMINI_API_KEY;
+if (!apiKey) console.error('❌  GEMINI_API_KEY missing from .env — /analyze will fail.');
 
-if (!apiKey) {
-  console.error('❌ CRITICAL ERROR: GEMINI_API_KEY is missing from environment variables. The server will not be able to reach the Gemini API.');
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+
+const SYSTEM_INSTRUCTION = `
+You are DesignMate — Senior Design Director inside Figma.
+Expertise: Color Theory, Typography, Spacing Systems, WCAG Accessibility, Design Tokens, Component Architecture, Figma Features (Auto Layout, Variants, Variables, Components).
+
+CAPABILITIES:
+- Design audit: contrast, spacing, hierarchy, consistency
+- Generate: color palettes, type scales, spacing scales, design tokens (JSON/CSS/Figma Variables)
+- Advice: naming conventions, design system governance, component APIs
+- Code: Figma plugin snippets, CSS, TypeScript
+- Context-aware: references user's saved folders (colors/fonts) by name
+
+PERSONA: Concise, practical, opinionated but flexible. Arabic-first, matches user language.
+
+RESPONSE FORMAT (JSON):
+{
+  "responseType": "chat" | "audit" | "tokens" | "code",
+  "message": "string (markdown, Arabic default)",
+  "data": {}
 }
 
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-
-const SYSTEM_INSTRUCTION = "You are an elite UI/UX Art Director and an Expert AI Prompt Engineer. You will receive Image(s) and a User Message. Analyze the user's message to determine their intent: 'evaluation' OR 'asset_extraction'. CRITICAL RULES: You MUST respond ONLY with a valid JSON object. All feedback MUST be in the exact same language used by the user. LANGUAGE RULE 2: The generated image prompt ('extracted_prompt') MUST ALWAYS be written in highly detailed ENGLISH. PROMPT STRUCTURE RULE: You MUST always position the exact name of the object/asset first, followed directly by its detailed description. JSON SCHEMA EXPECTED: { 'intent': 'evaluation' | 'asset_extraction', 'is_valid_ui': boolean, 'global_message': 'String', 'evaluation_data': { 'confidence_score': number, 'is_matching_brand': boolean, 'errors': [ { 'category': 'Typography | Spacing | Color | Alignment', 'issue': 'String', 'suggestion': 'String' } ] }, 'asset_data': { 'extracted_prompt': 'String (ENGLISH ONLY)', 'target_tool': 'String' } }";
+CONTEXT INJECTED PER REQUEST:
+- userMessage: string
+- imageBase64: selected layer PNG (may be absent)
+- userFolders: {colors: [...], fonts: [...]} from clientStorage
+- brandKitBase64?: optional brand reference image
+`;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ---------- CORS ----------
-const corsOptions = {
-  origin: '*',
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-};
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
-
-// ---------- Payload limits ----------
+app.use(cors({ origin: '*', methods: ['GET', 'POST', 'OPTIONS'], allowedHeaders: ['Content-Type', 'Authorization'] }));
+app.options('*', cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// ---------- Session cache ----------
+// Session cache
 const sessionCache = new Map();
-const SESSION_TTL_MS = 60 * 60 * 1000;
-
-function cleanupOldSessions() {
+setInterval(() => {
   const now = Date.now();
-  for (const [userId, data] of sessionCache.entries()) {
-    if (now - data.createdAt > SESSION_TTL_MS) {
-      sessionCache.delete(userId);
-    }
-  }
-}
-setInterval(cleanupOldSessions, 10 * 60 * 1000);
+  for (const [k, v] of sessionCache) if (now - v.createdAt > 3_600_000) sessionCache.delete(k);
+}, 600_000);
 
-// ---------- /session/init ----------
 app.post('/session/init', (req, res) => {
-  try {
-    const { imageBase64 } = req.body;
-    if (!imageBase64) {
-      return res.status(400).json({ error: 'imageBase64 is required' });
-    }
-    const userId = uuidv4();
-    sessionCache.set(userId, { brandKitBase64: imageBase64, createdAt: Date.now() });
-    res.json({ userId, message: 'Brand kit image saved to session' });
-  } catch (err) {
-    console.error('Error in /session/init:', err.message);
-    res.status(500).json({ error: 'Internal server error while initializing session.' });
-  }
+  const { imageBase64 } = req.body;
+  if (!imageBase64) return res.status(400).json({ error: 'imageBase64 required' });
+  const userId = uuidv4();
+  sessionCache.set(userId, { brandKitBase64: imageBase64, createdAt: Date.now() });
+  res.json({ userId, message: 'Brand kit saved' });
 });
 
-function bufferArrayToBase64(byteArray) {
-  const buffer = Buffer.from(byteArray);
-  return buffer.toString('base64');
-}
-
-function buildGeminiPayload(userMessage, images) {
-  const imageParts = images.map((img) => ({
-    inline_data: { mime_type: img.mimeType, data: img.data },
-  }));
+function buildPayload(userMessage, images) {
   return {
     system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-    contents: [{ parts: [{ text: userMessage }, ...imageParts] }],
-    generationConfig: { response_mime_type: 'application/json' },
+    contents: [{ parts: [{ text: userMessage }, ...images.map(img => ({ inline_data: { mime_type: img.mimeType, data: img.data } }))] }],
+    generationConfig: { temperature: 0.7 },
   };
 }
 
-async function callAIServiceWithRetry(userMessage, images, { retries = 3, timeoutMs = 15000 } = {}) {
-  const payload = buildGeminiPayload(userMessage, images);
-  let lastError;
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+async function callGemini(userMessage, images, retries = 3) {
+  let lastErr;
+  for (let i = 1; i <= retries; i++) {
     try {
-      const response = await fetch(GEMINI_URL, {
+      // node-fetch v2 + Node v24: use a race-based timeout instead of AbortController
+      const fetchPromise = fetch(GEMINI_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
+        body: JSON.stringify(buildPayload(userMessage, images)),
       });
-      clearTimeout(timeoutId);
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Gemini API responded with status ${response.status}: ${errText}`);
-      }
-      const data = await response.json();
-      const rawText = data.candidates[0].content.parts[0].text;
-      return JSON.parse(rawText);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Gemini request timed out after 45s')), 45_000)
+      );
+      const res = await Promise.race([fetchPromise, timeoutPromise]);
+      if (!res.ok) throw new Error(`Gemini ${res.status}: ${await res.text()}`);
+      const json = await res.json();
+      const raw = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!raw) throw new Error('Empty Gemini response');
+      // Strip markdown fences if present: ```json ... ```
+      const stripped = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+      try { return JSON.parse(stripped); } catch { return { responseType: 'chat', message: raw, data: {} }; }
     } catch (err) {
-      clearTimeout(timeoutId);
-      lastError = err;
-      console.warn(`Attempt ${attempt} failed: ${err.message}`);
-      if (attempt < retries) {
-        await new Promise((r) => setTimeout(r, attempt * 1000));
-      }
+      lastErr = err;
+      console.warn(`Attempt ${i} failed: ${err.message}`);
+      if (i < retries) await new Promise(r => setTimeout(r, i * 1200));
     }
   }
-  throw lastError;
+  throw lastErr;
 }
 
-// ---------- /analyze ----------
-// Accepts a lean payload directly from the Figma plugin UI:
-//   { prompt: string, image: string }  — image is a Base64-encoded PNG
-// No session is required for this endpoint; the image is sent inline with every request.
 app.post('/analyze', async (req, res) => {
   try {
-    const { prompt, image } = req.body;
+    const { prompt, image, userId, userFolders } = req.body;
+    if (!prompt?.trim()) return res.status(400).json({ error: '`prompt` is required.' });
+    if (!apiKey) return res.status(503).json({ error: 'GEMINI_API_KEY not configured on server.' });
 
-    // --- Input validation ---
-    if (!prompt || typeof prompt !== 'string' || prompt.trim() === '') {
-      return res.status(400).json({ error: '`prompt` is required and must be a non-empty string.' });
-    }
-    if (!image || typeof image !== 'string') {
-      return res.status(400).json({ error: '`image` is required and must be a Base64 string.' });
-    }
-
-    // --- API key guard ---
-    if (!apiKey) {
-      return res.status(503).json({ error: 'Server misconfiguration: GEMINI_API_KEY is not set.' });
+    // Build enriched prompt with folder context
+    let enrichedPrompt = prompt.trim();
+    if (userFolders && (userFolders.colors?.length || userFolders.fonts?.length)) {
+      const folderSummary = JSON.stringify(userFolders, null, 2);
+      enrichedPrompt += `\n\n[User Saved Folders Context]\n${folderSummary}`;
     }
 
-    // Build a single-image payload — the PNG exported from the Figma selection
-    const images = [{ mimeType: 'image/png', data: image }];
-    const result = await callAIServiceWithRetry(prompt.trim(), images, { retries: 3, timeoutMs: 15000 });
+    const images = [];
+    if (image) images.push({ mimeType: 'image/png', data: image });
+    // Optionally prepend brand kit image if session exists
+    if (userId && sessionCache.has(userId)) {
+      images.unshift({ mimeType: 'image/png', data: sessionCache.get(userId).brandKitBase64 });
+    }
+
+    const result = await callGemini(enrichedPrompt, images);
+
+    // Normalise: if Gemini returned a plain string, wrap it
+    if (typeof result === 'string') {
+      return res.json({ responseType: 'chat', message: result, data: {} });
+    }
+    // If old schema slipped through, normalise to new schema
+    if (result.global_message && !result.message) {
+      result.message = result.global_message;
+      result.responseType = result.responseType || 'chat';
+      result.data = result.data || {};
+    }
     res.json(result);
   } catch (err) {
-    console.error('Error in /analyze:', err.message);
-    res.status(504).json({
-      error: 'Could not reach the analysis service right now, please try again shortly.',
-    });
+    console.error('/analyze error:', err.message);
+    res.status(504).json({ error: 'Could not reach the analysis service. Please try again.' });
   }
 });
 
-app.get('/', (req, res) => {
-  res.send('Server is running successfully!');
-});
+app.get('/health', (_, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
+app.get('/', (_, res) => res.send('DesignMate AI backend is running ✅'));
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`✅  DesignMate AI server running on http://localhost:${PORT}`));

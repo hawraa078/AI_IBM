@@ -13,5 +13,8 @@
     "express": "^4.19.2",
     "node-fetch": "^2.7.0",
     "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
   }
 }

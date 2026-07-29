@@ -1,601 +1,1192 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Styles master</title>
-  <style>
-    /* -----------------------------------------------------------------------
-       Design tokens — edit these variables to retheme the entire UI.
-    ----------------------------------------------------------------------- */
-    :root {
-      --bg-base:        #0f172a;   /* page background                        */
-      --bg-surface:     #1e293b;   /* card / chat-window surface             */
-      --bg-input:       #0f172a;   /* input field background                 */
-      --border:         #334155;   /* subtle borders                         */
-      --text-primary:   #f1f5f9;   /* main text                              */
-      --text-muted:     #94a3b8;   /* placeholder / muted labels             */
-      --accent-purple:  #8b5cf6;   /* user bubble / primary accent           */
-      --accent-cyan:    #06b6d4;   /* send button / header highlight         */
-      --bubble-ai:      #1e3a5f;   /* AI bubble background                   */
-      --error-red:      #f43f5e;   /* error bubble accent                    */
-      --radius-lg:      14px;
-      --radius-md:      10px;
-      --radius-sm:      6px;
-      --transition:     0.18s ease;
-    }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>DesignMate</title>
+<style>
+:root {
+  --bg:       #111318;
+  --surface:  #1c1f26;
+  --surface2: #252830;
+  --border:   #2e3140;
+  --text:     #e8eaf0;
+  --muted:    #7b8099;
+  --pink:     #e0458b;
+  --green:    #22c55e;
+  --purple:   #a855f7;
+  --amber:    #f59e0b;
+  --blue:     #3b82f6;
+  --t: 0.15s ease;
+}
 
-    /* -----------------------------------------------------------------------
-       Reset & base
-    ----------------------------------------------------------------------- */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: -apple-system, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
 
-    body {
-      background: var(--bg-base);
-      color: var(--text-primary);
-      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
-      font-size: 13px;
-      line-height: 1.55;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
+/* ── Layout ── */
+#root { display: flex; flex-direction: column; height: 100vh; }
+.content { flex: 1; overflow: hidden; position: relative; }
+.tab-panel { position: absolute; inset: 0; display: none; flex-direction: column; overflow: hidden; }
+.tab-panel.active { display: flex; }
 
-    /* -----------------------------------------------------------------------
-       Chat window — fills the entire plugin viewport
-    ----------------------------------------------------------------------- */
-    #chatWindow {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-    }
+/* ── Header ── */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-icon {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--pink), var(--purple));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0;
+}
+.brand-name { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -.02em; }
+.brand-version { font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; margin-top: 1px; }
+.header-right { display: flex; align-items: center; gap: 8px; }
+.status-pill {
+  display: flex; align-items: center; gap: 5px;
+  padding: 3px 8px; border-radius: 20px;
+  background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.25);
+  font-size: 10px; font-weight: 600; color: var(--green); letter-spacing: .04em;
+}
+.status-pill::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
 
-    /* -----------------------------------------------------------------------
-       Header
-    ----------------------------------------------------------------------- */
-    .chat-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 14px 16px;
-      background: var(--bg-base);
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
+/* ── Tabs ── */
+.tabbar {
+  display: flex; flex-shrink: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 4px;
+}
+.tab-btn {
+  flex: 1; padding: 9px 4px; border: none; background: none;
+  color: var(--muted);
+  font-size: 11px; font-weight: 600; font-family: inherit;
+  letter-spacing: .05em; text-transform: uppercase; cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all var(--t);
+}
+.tab-btn.active { color: var(--text); border-bottom-color: var(--pink); }
+.tab-btn:hover:not(.active) { color: var(--text); }
 
-    .chat-header-avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      flex-shrink: 0;
-    }
+/* ── Loading ── */
+#loading-overlay {
+  position: absolute; inset: 0; z-index: 200;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px;
+}
+#loading-overlay.gone { display: none; }
+.spin-ring {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 3px solid var(--border);
+  border-top-color: var(--pink);
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-label { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
 
-    .chat-header-text h1 {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text-primary);
-      letter-spacing: 0.02em;
-    }
+/* ── Scroll ── */
+.scroll { overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+.scroll::-webkit-scrollbar { width: 4px; }
+.scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
-    .chat-header-text p {
-      font-size: 11px;
-      color: var(--accent-cyan);
-    }
+/* ── Section header ── */
+.sec-head {
+  padding: 0 16px 6px;
+  font-size: 10px; font-weight: 700; color: var(--muted);
+  letter-spacing: .09em; text-transform: uppercase;
+}
 
-    /* Status dot */
-    .status-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #22c55e;
-      margin-left: auto;
-      flex-shrink: 0;
-    }
+/* ── Surface card ── */
+.s-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+}
 
-    /* -----------------------------------------------------------------------
-       Message list — auto-scrolls to the latest message
-    ----------------------------------------------------------------------- */
-    #chatMessages {
-      flex: 1;
-      padding: 14px 12px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      /* Custom scrollbar */
-      scrollbar-width: thin;
-      scrollbar-color: var(--border) transparent;
-    }
-    #chatMessages::-webkit-scrollbar       { width: 4px; }
-    #chatMessages::-webkit-scrollbar-track { background: transparent; }
-    #chatMessages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+/* ── Chip / tag ── */
+.chip {
+  display: inline-flex; align-items: center;
+  padding: 3px 9px; border-radius: 20px;
+  background: var(--surface2); border: 1px solid var(--border);
+  font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: .04em; text-transform: uppercase;
+}
 
-    /* -----------------------------------------------------------------------
-       Chat bubbles
-    ----------------------------------------------------------------------- */
-    .bubble-row {
-      display: flex;
-      align-items: flex-end;
-      gap: 6px;
-    }
-    .bubble-row.user  { flex-direction: row-reverse; }
-    .bubble-row.ai    { flex-direction: row; }
+/* ── Primary button ── */
+.btn-primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 18px; border-radius: 8px; border: none;
+  background: linear-gradient(135deg, var(--pink), #c0357a);
+  color: #fff; font-size: 12px; font-weight: 700; font-family: inherit;
+  letter-spacing: .03em; cursor: pointer;
+  transition: opacity var(--t), transform var(--t);
+}
+.btn-primary:hover { opacity: .88; transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { opacity: .4; cursor: not-allowed; transform: none; }
 
-    .bubble-avatar {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-    }
-    .bubble-row.user  .bubble-avatar { background: var(--accent-purple); }
-    .bubble-row.ai    .bubble-avatar { background: var(--bubble-ai); }
+.btn-secondary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 18px; border-radius: 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); font-size: 12px; font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: background var(--t), border-color var(--t);
+}
+.btn-secondary:hover { background: var(--border); border-color: var(--muted); }
 
-    .bubble {
-      max-width: 78%;
-      padding: 9px 13px;
-      border-radius: var(--radius-md);
-      font-size: 12.5px;
-      line-height: 1.5;
-      word-break: break-word;
-      white-space: pre-wrap;
-    }
-    .user-bubble {
-      background: var(--accent-purple);
-      color: #fff;
-      border-bottom-right-radius: 3px;
-    }
-    .ai-bubble {
-      background: var(--bubble-ai);
-      color: var(--text-primary);
-      border-bottom-left-radius: 3px;
-      border: 1px solid rgba(99,179,237,0.12);
-    }
-    .error-bubble {
-      background: rgba(244, 63, 94, 0.15);
-      color: #fda4af;
-      border: 1px solid rgba(244, 63, 94, 0.35);
-      border-bottom-left-radius: 3px;
-    }
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 10px; border-radius: 6px; border: none;
+  background: none; color: var(--muted);
+  font-size: 11px; font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: color var(--t), background var(--t);
+}
+.btn-ghost:hover { color: var(--text); background: var(--surface2); }
 
-    /* -----------------------------------------------------------------------
-       Typing / loading indicator
-    ----------------------------------------------------------------------- */
-    .typing-indicator {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 10px 13px;
-    }
-    .typing-indicator span {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--accent-cyan);
-      animation: bounce 1.2s infinite ease-in-out;
-    }
-    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes bounce {
-      0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
-      40%            { transform: translateY(-6px); opacity: 1; }
-    }
+/* ── Empty state ── */
+.empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 28px 16px; text-align: center; }
+.empty-icon { font-size: 28px; opacity: .5; }
+.empty-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.empty-sub { font-size: 12px; color: var(--muted); max-width: 200px; line-height: 1.6; }
 
-    /* -----------------------------------------------------------------------
-       Input area — pinned to the bottom
-    ----------------------------------------------------------------------- */
-    .chat-input-area {
-      display: flex;
-      align-items: flex-end;
-      gap: 8px;
-      padding: 10px 12px;
-      background: var(--bg-base);
-      border-top: 1px solid var(--border);
-      flex-shrink: 0;
-    }
+/* ═══════════════════════
+   SCAN TAB
+   ═══════════════════════ */
+#tab-scan { }
+.scan-body { flex: 1; display: flex; flex-direction: column; gap: 0; padding: 14px; overflow-y: auto; }
 
-    #userInput {
-      flex: 1;
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      color: var(--text-primary);
-      padding: 8px 12px;
-      border-radius: var(--radius-md);
-      outline: none;
-      font-size: 12.5px;
-      font-family: inherit;
-      resize: none;
-      line-height: 1.4;
-      max-height: 100px;
-      overflow-y: auto;
-      transition: border-color var(--transition);
-    }
-    #userInput::placeholder { color: var(--text-muted); }
-    #userInput:focus { border-color: var(--accent-cyan); }
+/* preview strip */
+.layer-preview {
+  border-radius: 8px; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--border);
+  height: 80px; display: flex; align-items: center; justify-content: center;
+  margin-bottom: 12px;
+}
+.layer-preview span { font-size: 11px; color: var(--muted); letter-spacing: .06em; }
 
-    #sendBtn {
-      background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
-      border: none;
-      color: #fff;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      transition: opacity var(--transition), transform var(--transition);
-    }
-    #sendBtn:hover:not(:disabled) { opacity: 0.88; transform: scale(1.07); }
-    #sendBtn:disabled              { opacity: 0.4; cursor: not-allowed; transform: none; }
+/* scan CTA */
+.scan-cta-wrap { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.scan-cta {
+  width: 100%; padding: 15px; border-radius: 10px; border: none;
+  background: linear-gradient(135deg, var(--green), #16a34a);
+  color: #fff; font-size: 16px; font-weight: 700; font-family: inherit;
+  cursor: pointer; letter-spacing: -.01em;
+  box-shadow: 0 4px 20px rgba(34,197,94,.25);
+  transition: opacity var(--t), transform var(--t), box-shadow var(--t);
+}
+.scan-cta:hover { opacity: .92; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(34,197,94,.35); }
+.scan-cta:active { transform: translateY(0); }
+.scan-cta:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+.scan-hint { font-size: 11px; color: var(--muted); text-align: center; }
 
-    /* Send icon SVG */
-    #sendBtn svg { width: 16px; height: 16px; fill: #fff; }
+/* result cards */
+.r-card { border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; animation: fup .2s ease; }
+.r-success { background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.25); color: #86efac; }
+.r-warn    { background: rgba(168,85,247,.1); border: 1px solid rgba(168,85,247,.25); color: #d8b4fe; }
+.r-info    { background: rgba(59,130,246,.1); border: 1px solid rgba(59,130,246,.25); color: #93c5fd; }
+.r-error   { background: rgba(224,69,139,.1); border: 1px solid rgba(224,69,139,.25); color: #f9a8d4; }
+.r-title   { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.r-body    { font-size: 12px; opacity: .88; line-height: 1.55; }
+.r-issue   { padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.07); }
+.r-issue:last-child { border-bottom: none; }
+.r-issue-cat { font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; opacity: .65; margin-bottom: 2px; }
+.r-issue-sug { font-size: 11px; opacity: .75; margin-top: 2px; font-style: italic; }
+@keyframes fup { from { opacity:0; transform:translateY(5px); } to { opacity:1; } }
 
-    /* -----------------------------------------------------------------------
-       Hint text below input
-    ----------------------------------------------------------------------- */
-    .input-hint {
-      font-size: 10px;
-      color: var(--text-muted);
-      text-align: center;
-      padding: 0 12px 8px;
-      background: var(--bg-base);
-      flex-shrink: 0;
-    }
-  </style>
+/* ═══════════════════════
+   PICKER TAB
+   ═══════════════════════ */
+#tab-picker { }
+.picker-body { flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 14px; overflow-y: auto; }
+
+/* layer bar */
+.layer-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 8px;
+  background: var(--surface); border: 1px solid var(--border);
+}
+.layer-bar-icon { font-size: 14px; }
+.layer-bar-name { flex: 1; font-size: 12px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.layer-bar-label { font-size: 10px; color: var(--muted); }
+
+/* color preview */
+.color-block {
+  border-radius: 8px; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--border);
+}
+.color-swatch { width: 100%; height: 56px; cursor: pointer; transition: opacity var(--t); }
+.color-swatch:hover { opacity: .9; }
+.color-info-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; }
+.color-hex { font-size: 16px; font-weight: 700; color: var(--text); cursor: pointer; letter-spacing: .02em; font-family: "SF Mono", "Fira Code", monospace; }
+.color-hex:hover { color: var(--pink); }
+.color-rgb { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.color-copy-hint { font-size: 10px; color: var(--pink); font-weight: 600; letter-spacing: .04em; }
+
+/* font preview */
+.font-block { border-radius: 8px; background: var(--surface); border: 1px solid var(--border); padding: 12px; }
+.font-big { font-size: 22px; font-weight: 400; color: var(--text); margin-bottom: 8px; line-height: 1.2; }
+.font-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+
+/* add row */
+.add-row { display: flex; gap: 8px; margin-top: 10px; }
+.folder-sel {
+  flex: 1; padding: 8px 10px; border-radius: 7px;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); font-size: 12px; font-family: inherit; outline: none;
+}
+.folder-sel:focus { border-color: var(--pink); }
+.folder-sel option { background: var(--surface); }
+
+/* ═══════════════════════
+   FOLDERS TAB
+   ═══════════════════════ */
+#tab-folders { overflow: hidden; }
+
+.folders-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.folders-header h2 { font-size: 14px; font-weight: 700; color: var(--text); }
+
+.new-folder-form {
+  display: none; padding: 12px 16px; gap: 8px; flex-wrap: wrap; flex-shrink: 0;
+  background: var(--surface2); border-bottom: 1px solid var(--border);
+}
+.new-folder-form.visible { display: flex; }
+.nf-input, .nf-select {
+  flex: 1; min-width: 90px; padding: 8px 10px; border-radius: 7px;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--text); font-size: 12px; font-family: inherit; outline: none;
+}
+.nf-input::placeholder { color: var(--muted); }
+.nf-input:focus, .nf-select:focus { border-color: var(--pink); }
+.nf-select option { background: var(--surface); }
+
+.folders-list { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.folders-list::-webkit-scrollbar { width: 4px; }
+.folders-list::-webkit-scrollbar-thumb { background: var(--border); }
+
+/* folder card */
+.f-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.f-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; cursor: pointer; user-select: none;
+  transition: background var(--t);
+}
+.f-header:hover { background: var(--surface2); }
+.f-chevron { font-size: 9px; color: var(--muted); transition: transform var(--t); flex-shrink: 0; }
+.f-card.open .f-chevron { transform: rotate(90deg); }
+.f-title { flex: 1; display: flex; align-items: center; gap: 7px; }
+.f-name {
+  font-size: 13px; font-weight: 600; color: var(--text); outline: none;
+  border: 1px solid transparent; border-radius: 4px; padding: 1px 4px;
+  background: none; font-family: inherit; cursor: text;
+}
+.f-name:focus { border-color: var(--pink); background: var(--surface2); }
+.f-badge { font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 20px; border: 1px solid; }
+.fb-c { color: var(--pink);   border-color: rgba(224,69,139,.4);   background: rgba(224,69,139,.08); }
+.fb-f { color: var(--purple); border-color: rgba(168,85,247,.4);   background: rgba(168,85,247,.08); }
+.fb-m { color: var(--green);  border-color: rgba(34,197,94,.4);    background: rgba(34,197,94,.08); }
+.f-count { font-size: 11px; color: var(--muted); margin-left: auto; }
+.f-del-btn { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 15px; line-height: 1; padding: 2px 5px; border-radius: 4px; transition: all var(--t); }
+.f-del-btn:hover { color: #fff; background: var(--pink); }
+
+.f-items { display: none; border-top: 1px solid var(--border); }
+.f-card.open .f-items { display: block; }
+.f-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 12px; border-bottom: 1px solid var(--border);
+  transition: background var(--t);
+}
+.f-item:last-child { border-bottom: none; }
+.f-item:hover { background: var(--surface2); }
+.f-item-swatch { width: 20px; height: 20px; border-radius: 4px; border: 1px solid var(--border); flex-shrink: 0; }
+.f-item-label { flex: 1; font-size: 12px; font-weight: 600; color: var(--text); }
+.f-item-sub   { font-size: 10px; color: var(--muted); margin-top: 1px; }
+.f-item-del { background: none; border: none; cursor: pointer; color: var(--border); font-size: 13px; opacity: 0; padding: 2px 5px; transition: all var(--t); }
+.f-item:hover .f-item-del { opacity: 1; }
+.f-item-del:hover { color: var(--pink); }
+.f-empty { padding: 12px; font-size: 11px; color: var(--muted); text-align: center; font-style: italic; }
+
+/* ═══════════════════════
+   CHAT TAB
+   ═══════════════════════ */
+#tab-chat { background: var(--bg); }
+
+#chatMessages { flex: 1; overflow-y: auto; padding: 14px 14px 8px; display: flex; flex-direction: column; gap: 10px; }
+#chatMessages::-webkit-scrollbar { width: 4px; }
+#chatMessages::-webkit-scrollbar-thumb { background: var(--border); }
+
+.brow { display: flex; align-items: flex-end; gap: 8px; }
+.brow.user { flex-direction: row-reverse; }
+.bav {
+  width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;
+}
+.bav.u { background: var(--blue); color: #fff; }
+.bav.a { background: linear-gradient(135deg, var(--pink), var(--purple)); color: #fff; }
+.bbl {
+  max-width: 78%; padding: 10px 13px; border-radius: 12px;
+  font-size: 12px; line-height: 1.6; word-break: break-word;
+}
+.user-bbl { background: var(--blue); color: #fff; border-bottom-right-radius: 3px; white-space: pre-wrap; }
+.ai-bbl   { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 3px; }
+.err-bbl  { background: rgba(224,69,139,.15); color: #f9a8d4; border: 1px solid rgba(224,69,139,.3); border-bottom-left-radius: 3px; white-space: pre-wrap; }
+
+/* markdown rendering in ai bubbles */
+.ai-bbl p  { margin-bottom: 6px; }
+.ai-bbl p:last-child { margin-bottom: 0; }
+.ai-bbl strong { font-weight: 700; color: var(--text); }
+.ai-bbl em { font-style: italic; }
+.ai-bbl code { font-family: "SF Mono","Fira Code","Courier New",monospace; font-size: 10.5px; background: var(--bg); border: 1px solid var(--border); padding: 1px 5px; border-radius: 4px; color: #a3e635; }
+.ai-bbl ul, .ai-bbl ol { padding-right: 18px; margin-bottom: 6px; }
+.ai-bbl li { margin-bottom: 2px; }
+.ai-bbl h1,.ai-bbl h2,.ai-bbl h3 { font-weight: 700; color: var(--text); margin-bottom: 5px; margin-top: 8px; }
+.ai-bbl h1 { font-size: 14px; }
+.ai-bbl h2 { font-size: 13px; }
+.ai-bbl h3 { font-size: 12px; }
+.ai-bbl hr { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+
+.code-block {
+  margin-top: 8px; padding: 10px 12px; border-radius: 8px;
+  background: var(--bg); border: 1px solid var(--border);
+  font-size: 10.5px; font-family: "SF Mono", "Fira Code", "Courier New", monospace;
+  overflow-x: auto; white-space: pre; color: #a3e635; position: relative;
+}
+.copy-btn {
+  position: absolute; top: 6px; right: 6px;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--muted); font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 5px;
+  cursor: pointer; letter-spacing: .05em; text-transform: uppercase; transition: all var(--t);
+}
+.copy-btn:hover { color: var(--text); background: var(--border); }
+
+.typing { display: flex; gap: 4px; padding: 10px 13px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; width: fit-content; border-bottom-left-radius: 3px; }
+.typing span { width: 5px; height: 5px; border-radius: 50%; background: var(--muted); animation: bounce 1.2s infinite ease-in-out; }
+.typing span:nth-child(2) { animation-delay: .2s; }
+.typing span:nth-child(3) { animation-delay: .4s; }
+@keyframes bounce { 0%,80%,100%{transform:translateY(0);opacity:.4;} 40%{transform:translateY(-5px);opacity:1;} }
+
+/* input area */
+.input-wrap {
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+.input-row { display: flex; gap: 8px; align-items: flex-end; }
+#userInput {
+  flex: 1; padding: 10px 12px; border-radius: 10px;
+  background: var(--bg); border: 1px solid var(--border);
+  color: var(--text); font-size: 12px; font-family: inherit;
+  resize: none; line-height: 1.5; max-height: 90px; overflow-y: auto; outline: none;
+  transition: border-color var(--t);
+}
+#userInput::placeholder { color: var(--muted); }
+#userInput:focus { border-color: var(--pink); }
+#sendBtn {
+  width: 38px; height: 38px; border-radius: 10px; border: none; flex-shrink: 0;
+  background: var(--pink); color: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity var(--t), transform var(--t);
+}
+#sendBtn:hover:not(:disabled) { opacity: .88; transform: translateY(-1px); }
+#sendBtn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+#sendBtn svg { width: 14px; height: 14px; fill: #fff; }
+.input-hint { font-size: 10px; color: var(--muted); text-align: center; margin-top: 6px; }
+
+/* ── Toast ── */
+#toast {
+  position: fixed; bottom: 54px; left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); font-size: 11px; font-weight: 600;
+  padding: 6px 16px; border-radius: 20px;
+  opacity: 0; pointer-events: none; white-space: nowrap; z-index: 999;
+  transition: opacity .16s, transform .16s;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
 </head>
 <body>
+<div id="root">
 
-  <!-- ======================================================================
-       Chat window
-  ====================================================================== -->
-  <div id="chatWindow">
-
-    <!-- Header -->
-    <div class="chat-header">
-      <div class="chat-header-avatar">✦</div>
-      <div class="chat-header-text">
-        <h1>Styles master</h1>
-        <p>AI Design Assistant</p>
+  <!-- Header -->
+  <div class="header">
+    <div class="brand">
+      <div class="brand-icon">✦</div>
+      <div>
+        <div class="brand-name">DesignMate</div>
+        <div class="brand-version">AI · Figma Plugin</div>
       </div>
-      <div class="status-dot" title="Connected"></div>
+    </div>
+    <div class="header-right">
+      <div class="status-pill">Live</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabbar">
+    <button class="tab-btn active" data-tab="scan">Scan</button>
+    <button class="tab-btn" data-tab="picker">Picker</button>
+    <button class="tab-btn" data-tab="folders">Folders</button>
+    <button class="tab-btn" data-tab="chat">Chat</button>
+  </div>
+
+  <div class="content">
+
+    <!-- Loading -->
+    <div id="loading-overlay">
+      <div class="spin-ring"></div>
+      <div class="loading-label">Loading</div>
     </div>
 
-    <!-- Message list -->
-    <div id="chatMessages">
-      <!-- Initial greeting bubble -->
-      <div class="bubble-row ai">
-        <div class="bubble-avatar">✦</div>
-        <div class="bubble ai-bubble">
-          Hi! I'm your AI design assistant. Select a layer in Figma, type your question, and hit Send — I'll analyse it for you.
+    <!-- ══ SCAN ══ -->
+    <div class="tab-panel active" id="tab-scan">
+      <div class="scan-body scroll">
+
+        <div class="layer-preview" id="previewArea">
+          <span>لم يتم تحديد أي طبقة</span>
+        </div>
+
+        <div class="scan-cta-wrap">
+          <button class="scan-cta" id="scanBtn">⚡ تحليل التصميم</button>
+          <span class="scan-hint">حدد إطاراً أو طبقة في Figma أولاً</span>
+        </div>
+
+        <div id="scanResults"></div>
+
+      </div>
+    </div>
+
+    <!-- ══ PICKER ══ -->
+    <div class="tab-panel" id="tab-picker">
+      <div class="picker-body scroll">
+
+        <div class="layer-bar">
+          <span class="layer-bar-icon">⬡</span>
+          <span class="layer-bar-name" id="layerName">لا يوجد تحديد</span>
+          <button class="btn-ghost" id="refreshBtn">
+            <svg viewBox="0 0 16 16" width="10" height="10" fill="currentColor"><path d="M13.65 2.35A8 8 0 1 0 15 8h-2a6 6 0 1 1-1.04-3.36L10 6h5V1l-1.35 1.35z"/></svg>
+            تحديث
+          </button>
+        </div>
+
+        <div>
+          <div class="sec-head">اللون من الطبقة</div>
+          <div class="color-block" id="colorContent">
+            <div class="empty">
+              <div class="empty-icon">🎨</div>
+              <div class="empty-sub">حدد طبقة شكل ذات تعبئة صلبة</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Manual color picker -->
+        <div>
+          <div class="sec-head">منتقي الألوان اليدوي</div>
+          <div class="color-block">
+            <div style="position:relative;height:56px;overflow:hidden;border-radius:0">
+              <div id="manualSwatch" style="width:100%;height:56px;background:#3b82f6;cursor:pointer;transition:background .1s"></div>
+              <input type="color" id="manualColorInput" value="#3b82f6"
+                style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0">
+            </div>
+            <div class="color-info-row">
+              <div>
+                <div class="color-hex" id="manualHex" style="cursor:pointer">#3B82F6</div>
+                <div class="color-rgb" id="manualRgb">rgb(59, 130, 246)</div>
+              </div>
+              <div class="color-copy-hint" style="cursor:pointer" id="manualCopyHint">انقر السطح للاختيار</div>
+            </div>
+            <div style="padding:0 12px 12px">
+              <div class="add-row">
+                <select class="folder-sel" id="manualColorFolderSel"></select>
+                <button class="btn-primary" style="padding:8px 14px;font-size:11px" id="addManualColorBtn">+ حفظ</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="sec-head">الخط من الطبقة</div>
+          <div class="font-block" id="fontContent">
+            <div class="empty">
+              <div class="empty-icon">✏️</div>
+              <div class="empty-sub">حدد طبقة نص لعرض معلومات الخط</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ FOLDERS ══ -->
+    <div class="tab-panel" id="tab-folders">
+      <div class="folders-header">
+        <h2>الأصول المحفوظة</h2>
+        <button class="btn-primary" style="padding:7px 14px;font-size:11px" id="newFolderBtn">+ مجلد جديد</button>
+      </div>
+      <div class="new-folder-form" id="newFolderForm">
+        <input class="nf-input" type="text" id="folderNameInput" placeholder="اسم المجلد" />
+        <select class="nf-select" id="folderTypeSelect">
+          <option value="mixed">عام</option>
+          <option value="colors">ألوان</option>
+          <option value="fonts">خطوط</option>
+        </select>
+        <button class="btn-primary" style="padding:7px 14px;font-size:11px" id="confirmFolderBtn">حفظ</button>
+        <button class="btn-secondary" style="padding:7px 12px;font-size:11px" id="cancelFolderBtn">إلغاء</button>
+      </div>
+      <div class="folders-list" id="foldersList">
+        <div class="empty">
+          <div class="empty-icon">📁</div>
+          <div class="empty-title">لا توجد مجلدات بعد</div>
+          <div class="empty-sub">أنشئ مجلدات لحفظ الألوان والخطوط من طبقات Figma</div>
         </div>
       </div>
     </div>
 
-    <!-- Fixed input area -->
-    <div class="chat-input-area">
-      <textarea
-        id="userInput"
-        rows="1"
-        placeholder="Ask about your design…"
-        autocomplete="off"
-        spellcheck="true"
-      ></textarea>
-      <button id="sendBtn" title="Send (Enter)">
-        <!-- Paper-plane icon -->
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/>
-        </svg>
-      </button>
+    <!-- ══ CHAT ══ -->
+    <div class="tab-panel" id="tab-chat">
+      <div id="chatMessages">
+        <div class="brow">
+          <div class="bav a">✦</div>
+          <div class="bbl ai-bbl">مرحباً! أنا DesignMate — مديرك الإبداعي داخل Figma.<br><br>حدد أي طبقة واسألني عن نظرية الألوان، الطباعة، إمكانية الوصول WCAG، رموز التصميم، أو اطلب تدقيقاً كاملاً للتصميم.</div>
+        </div>
+      </div>
+      <div class="input-wrap">
+        <div class="input-row">
+          <textarea id="userInput" rows="1" placeholder="اسأل عن تصميمك…"></textarea>
+          <button id="sendBtn"><svg viewBox="0 0 24 24"><path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+        </div>
+        <div class="input-hint">Enter للإرسال · Shift+Enter لسطر جديد</div>
+      </div>
     </div>
 
-    <!-- Keyboard shortcut hint -->
-    <div class="input-hint">Press Enter to send · Shift+Enter for new line</div>
+  </div>
+</div>
+<div id="toast"></div>
 
-  </div><!-- /#chatWindow -->
+<script>
+// ══ STATE ══════════════════════════════════════════════════════════════════
+const state = {
+  folders: [],
+  selectedColor: null,
+  selectedFont: null,
+  isFetching: false,
+  typingRow: null,
+  openFolderIds: new Set(),   // preserve open state across re-renders
+};
+const BACKEND = 'http://localhost:3000/analyze';
+const $ = id => document.getElementById(id);
 
-  <script>
-    /**
-     * Styles master — Plugin UI script
-     *
-     * Responsibilities:
-     *  1. Accept user text input and dispatch a 'request-image' message to
-     *     the Figma sandbox (code.js).
-     *  2. Receive the Base64-encoded PNG back from the sandbox.
-     *  3. POST { prompt, image } to the backend /analyze endpoint.
-     *  4. Render the AI's structured JSON response as a chat bubble.
-     *  5. Provide robust error handling and a visual loading state throughout.
-     */
+function esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function toast(msg, ms = 1800) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), ms);
+}
 
-    // -------------------------------------------------------------------------
-    // Constants
-    // -------------------------------------------------------------------------
+// ══ TABS ═══════════════════════════════════════════════════════════════════
+function switchTab(id) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === id));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + id));
+  if (id === 'picker') requestLayerInfo();
+}
+document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+setTimeout(() => $('loading-overlay').classList.add('gone'), 800);
 
-    /** Backend endpoint — update this if you deploy the server remotely. */
-    const BACKEND_URL = 'http://localhost:3000/analyze';
+// ══ CLIPBOARD HELPER (Figma iframe safe) ══════════════════════════════════
+function copyText(text) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(() => copyFallback(text));
+    } else {
+      copyFallback(text);
+    }
+  } catch { copyFallback(text); }
+}
+function copyFallback(text) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  } catch { /* silent */ }
+}
 
-    // -------------------------------------------------------------------------
-    // DOM references
-    // -------------------------------------------------------------------------
+// ══ MARKDOWN RENDERER (minimal, safe) ═════════════════════════════════════
+// IMPORTANT: process code blocks BEFORE esc() so backticks survive
+function renderMarkdown(raw) {
+  if (!raw) return '';
+  // 1. Extract fenced code blocks first (before any escaping)
+  const codeBlocks = [];
+  let s = raw.replace(/```[\w]*\n?([\s\S]*?)```/g, (_, code) => {
+    const idx = codeBlocks.length;
+    codeBlocks.push(code);
+    return `\x00CODE${idx}\x00`;
+  });
+  // 2. Now escape HTML in the remaining text
+  s = esc(s);
+  // 3. Headings
+  s = s.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  s = s.replace(/^## (.+)$/gm,  '<h2>$1</h2>');
+  s = s.replace(/^# (.+)$/gm,   '<h1>$1</h1>');
+  // 4. HR
+  s = s.replace(/^---$/gm, '<hr>');
+  // 5. Bold, italic, inline code
+  s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/\*(.+?)\*/g,     '<em>$1</em>');
+  s = s.replace(/`([^`]+)`/g,     '<code>$1</code>');
+  // 6. Unordered list
+  s = s.replace(/((?:^[-*] .+\n?)+)/gm, match => {
+    const items = match.trim().split('\n').map(l => `<li>${l.replace(/^[-*] /, '')}</li>`).join('');
+    return `<ul>${items}</ul>`;
+  });
+  // 7. Ordered list
+  s = s.replace(/((?:^\d+\. .+\n?)+)/gm, match => {
+    const items = match.trim().split('\n').map(l => `<li>${l.replace(/^\d+\. /, '')}</li>`).join('');
+    return `<ol>${items}</ol>`;
+  });
+  // 8. Paragraphs
+  s = s.split(/\n{2,}/).map(block => {
+    block = block.trim();
+    if (!block) return '';
+    if (/^<(h[1-3]|ul|ol|hr|div|\x00)/.test(block)) return block;
+    return `<p>${block.replace(/\n/g, '<br>')}</p>`;
+  }).join('');
+  // 9. Restore code blocks
+  s = s.replace(/\x00CODE(\d+)\x00/g, (_, idx) => {
+    const code = esc(codeBlocks[+idx]);
+    return `<div class="code-block" style="margin-top:8px;position:relative"><button class="copy-btn" data-copy="${codeBlocks[+idx].replace(/"/g, '&quot;')}">Copy</button>${code}</div>`;
+  });
+  return s;
+}
 
-    const chatMessages = /** @type {HTMLElement} */ (document.getElementById('chatMessages'));
-    const userInput    = /** @type {HTMLTextAreaElement} */ (document.getElementById('userInput'));
-    const sendBtn      = /** @type {HTMLButtonElement} */ (document.getElementById('sendBtn'));
+// ══ SCAN ═══════════════════════════════════════════════════════════════════
+$('scanBtn').addEventListener('click', () => {
+  $('scanResults').innerHTML = '';
+  $('scanBtn').disabled = true;
+  // Request image — sandbox will reply with 'image-ready' or 'error'
+  state._scanPending = true;
+  parent.postMessage({ pluginMessage: { type: 'request-image' } }, '*');
+});
 
-    // -------------------------------------------------------------------------
-    // State
-    // -------------------------------------------------------------------------
-
-    /** Holds the user's pending message while we wait for the image from the sandbox. */
-    let pendingPrompt = '';
-
-    /** Tracks whether a request is currently in-flight to prevent double-sends. */
-    let isFetching = false;
-
-    // -------------------------------------------------------------------------
-    // Utility: auto-resize textarea as the user types
-    // -------------------------------------------------------------------------
-
-    userInput.addEventListener('input', () => {
-      userInput.style.height = 'auto';
-      userInput.style.height = Math.min(userInput.scrollHeight, 100) + 'px';
+async function runScan(b64) {
+  const prompt = 'قيّم هذا التصميم من حيث الطباعة والتباعد وتباين الألوان والمحاذاة وتناسق نظام التصميم. قدّم تدقيقاً شاملاً للجودة.';
+  try {
+    const body = { prompt, userFolders: buildCtx() };
+    if (b64) body.image = b64;
+    const res = await fetch(BACKEND, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
     });
+    renderScanResults(await res.json());
+  } catch {
+    renderScanResults({ error: 'تعذّر الوصول إلى الخادم على localhost:3000' });
+  }
+  $('scanBtn').disabled = false;
+}
 
-    // -------------------------------------------------------------------------
-    // Utility: scroll the message list to the very bottom
-    // -------------------------------------------------------------------------
+function renderScanResults(data) {
+  const el = $('scanResults');
+  el.innerHTML = '';
+  if (data.error) {
+    el.insertAdjacentHTML('beforeend',
+      `<div class="r-card r-error"><div class="r-title">خطأ</div><div class="r-body">${esc(data.error)}</div></div>`);
+    return;
+  }
+  const msg    = data.message || data.global_message || '';
+  const errors = data.data?.errors || data.evaluation_data?.errors || [];
+  const score  = data.data?.confidence_score ?? data.evaluation_data?.confidence_score;
 
-    function scrollToBottom() {
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
+  if (msg) {
+    const cls = errors.length ? 'r-warn' : 'r-success';
+    el.insertAdjacentHTML('beforeend',
+      `<div class="r-card ${cls}"><div class="r-title">${errors.length ? '⚠ مشاكل موجودة' : '✓ يبدو جيداً'}</div><div class="r-body">${esc(msg)}</div></div>`);
+  }
+  if (score != null) {
+    el.insertAdjacentHTML('beforeend',
+      `<div class="r-card r-info"><div class="r-title">نقاط الجودة</div><div class="r-body">${score}%</div></div>`);
+  }
+  if (errors.length) {
+    const rows = errors.map(e =>
+      `<div class="r-issue">
+         <div class="r-issue-cat">${esc(e.category || 'مشكلة')}</div>
+         <div>${esc(e.issue)}</div>
+         ${e.suggestion ? `<div class="r-issue-sug">→ ${esc(e.suggestion)}</div>` : ''}
+       </div>`).join('');
+    el.insertAdjacentHTML('beforeend', `<div class="r-card r-warn"><div class="r-body">${rows}</div></div>`);
+  } else if (!msg) {
+    el.insertAdjacentHTML('beforeend',
+      `<div class="r-card r-success"><div class="r-title">✓ لا مشاكل</div><div class="r-body">لم يتم اكتشاف أي أخطاء في نظام التصميم أو التباين.</div></div>`);
+  }
+}
 
-    // -------------------------------------------------------------------------
-    // Utility: append a chat bubble to the message list
-    // -------------------------------------------------------------------------
+// ══ PICKER ═════════════════════════════════════════════════════════════════
+function requestLayerInfo() {
+  parent.postMessage({ pluginMessage: { type: 'get-layer-info' } }, '*');
+}
+$('refreshBtn').addEventListener('click', requestLayerInfo);
 
-    /**
-     * @param {string}  text    - Message content (plain text or formatted)
-     * @param {'user'|'ai'|'error'} role - Controls visual styling
-     * @returns {HTMLElement} The created bubble element
-     */
-    function addBubble(text, role) {
-      const row = document.createElement('div');
-      row.className = `bubble-row ${role === 'user' ? 'user' : 'ai'}`;
+function renderPicker(msg) {
+  const { color, font, nodeName } = msg;
+  $('layerName').textContent = nodeName || 'لا يوجد تحديد';
 
-      const avatar = document.createElement('div');
-      avatar.className = 'bubble-avatar';
-      avatar.textContent = role === 'user' ? 'U' : '✦';
+  const cc = $('colorContent');
+  if (color) {
+    state.selectedColor = color;
+    cc.innerHTML = `
+      <div class="color-swatch" id="cSwatch" style="background:${esc(color.hex)}" title="انقر للنسخ"></div>
+      <div class="color-info-row">
+        <div>
+          <div class="color-hex" id="cHex">${esc(color.hex)}</div>
+          <div class="color-rgb">rgb(${color.rgb.r}, ${color.rgb.g}, ${color.rgb.b})</div>
+        </div>
+        <div class="color-copy-hint">انقر للنسخ</div>
+      </div>
+      <div style="padding:0 12px 12px">
+        <div class="add-row">
+          <select class="folder-sel" id="colorFolderSel"></select>
+          <button class="btn-primary" style="padding:8px 14px;font-size:11px" id="addColorBtn">+ حفظ</button>
+        </div>
+      </div>`;
+    populateSel('colorFolderSel');
+    updateSaveButtons();
+    const cp = () => {
+      copyText(color.hex);
+      toast('تم نسخ ' + color.hex);
+    };
+    $('cHex').addEventListener('click', cp);
+    $('cSwatch').addEventListener('click', cp);
+    $('addColorBtn').addEventListener('click', addColor);
+  } else {
+    state.selectedColor = null;
+    cc.innerHTML = `<div class="empty"><div class="empty-icon">🎨</div><div class="empty-sub">لا توجد تعبئة صلبة. حدد طبقة شكل.</div></div>`;
+  }
 
-      const bubble = document.createElement('div');
-      bubble.className = `bubble ${role}-bubble`;
-      bubble.textContent = text;
+  const fc = $('fontContent');
+  if (font) {
+    state.selectedFont = font;
+    fc.innerHTML = `
+      <div class="font-big">${esc(font.fontName || 'Unknown')}</div>
+      <div class="font-chips">
+        ${font.fontStyle ? `<span class="chip">${esc(font.fontStyle)}</span>` : ''}
+        ${font.fontSize  ? `<span class="chip">${font.fontSize}px</span>` : ''}
+        ${font.fontWeight? `<span class="chip">wt ${font.fontWeight}</span>` : ''}
+      </div>
+      <div class="add-row" style="margin-top:12px">
+        <select class="folder-sel" id="fontFolderSel"></select>
+        <button class="btn-primary" style="padding:8px 14px;font-size:11px" id="addFontBtn">+ حفظ</button>
+      </div>`;
+    populateSel('fontFolderSel');
+    updateSaveButtons();
+    $('addFontBtn').addEventListener('click', addFont);
+  } else {
+    state.selectedFont = null;
+    fc.innerHTML = `<div class="empty"><div class="empty-icon">✏️</div><div class="empty-sub">لا توجد طبقة نص. حدد Text node.</div></div>`;
+  }
+}
 
-      row.appendChild(avatar);
-      row.appendChild(bubble);
-      chatMessages.appendChild(row);
-      scrollToBottom();
-      return bubble;
-    }
+function populateSel(id) {
+  const el = $(id); if (!el) return;
+  el.innerHTML = state.folders.length
+    ? state.folders.map(f => `<option value="${esc(f.id)}">${esc(f.name)}</option>`).join('')
+    : '<option value="">— لا توجد مجلدات —</option>';
+}
 
-    // -------------------------------------------------------------------------
-    // Utility: show / remove the animated typing indicator
-    // -------------------------------------------------------------------------
+// Disable save buttons when no folders exist
+function updateSaveButtons() {
+  const noFolders = state.folders.length === 0;
+  const cb = $('addColorBtn'), fb = $('addFontBtn');
+  if (cb) cb.disabled = noFolders;
+  if (fb) fb.disabled = noFolders;
+  // Manual color picker save button
+  const mc = $('addManualColorBtn');
+  if (mc) mc.disabled = noFolders;
+  // Repopulate manual folder select too
+  populateSel('manualColorFolderSel');
+}
 
-    let typingRow = null;
+// ── Manual Color Picker ────────────────────────────────────────────────────
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return { r, g, b };
+}
 
-    function showTyping() {
-      if (typingRow) return; // already visible
-      typingRow = document.createElement('div');
-      typingRow.className = 'bubble-row ai';
+(function initManualPicker() {
+  const input = $('manualColorInput');
+  const swatch = $('manualSwatch');
+  const hexEl = $('manualHex');
+  const rgbEl = $('manualRgb');
+  if (!input) return;
 
-      const avatar = document.createElement('div');
-      avatar.className = 'bubble-avatar';
-      avatar.textContent = '✦';
+  function onColorChange() {
+    const hex = input.value.toUpperCase();
+    swatch.style.background = hex;
+    hexEl.textContent = hex;
+    const rgb = hexToRgb(input.value);
+    rgbEl.textContent = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+    // Store as selectedManualColor on state
+    state.selectedManualColor = { hex, rgb };
+  }
 
-      const indicator = document.createElement('div');
-      indicator.className = 'bubble ai-bubble typing-indicator';
-      indicator.innerHTML = '<span></span><span></span><span></span>';
+  input.addEventListener('input', onColorChange);
+  input.addEventListener('change', onColorChange);
 
-      typingRow.appendChild(avatar);
-      typingRow.appendChild(indicator);
-      chatMessages.appendChild(typingRow);
-      scrollToBottom();
-    }
+  // Copy on HEX label click
+  hexEl.addEventListener('click', () => {
+    copyText(hexEl.textContent);
+    toast('تم نسخ ' + hexEl.textContent);
+  });
 
-    function hideTyping() {
-      if (typingRow) {
-        typingRow.remove();
-        typingRow = null;
-      }
-    }
-
-    // -------------------------------------------------------------------------
-    // Utility: lock / unlock the UI during a fetch
-    // -------------------------------------------------------------------------
-
-    function setLoading(loading) {
-      isFetching     = loading;
-      sendBtn.disabled = loading;
-      userInput.disabled = loading;
-    }
-
-    // -------------------------------------------------------------------------
-    // Utility: format the AI JSON response into a readable string
-    // -------------------------------------------------------------------------
-
-    /**
-     * Converts the structured JSON returned by the backend into a human-
-     * readable text string for display in the chat bubble.
-     *
-     * @param {object} data - Parsed JSON from the /analyze endpoint
-     * @returns {string}
-     */
-    function formatAIResponse(data) {
-      // If the server returned a plain error string, surface it directly
-      if (data.error) return `⚠️ ${data.error}`;
-
-      const lines = [];
-
-      // Global message is always present
-      if (data.global_message) lines.push(data.global_message);
-
-      // Evaluation branch
-      if (data.intent === 'evaluation' && data.evaluation_data) {
-        const ev = data.evaluation_data;
-        if (typeof ev.confidence_score === 'number') {
-          lines.push(`\nConfidence: ${ev.confidence_score}%`);
-        }
-        if (Array.isArray(ev.errors) && ev.errors.length > 0) {
-          lines.push('\nIssues found:');
-          ev.errors.forEach((e, i) => {
-            lines.push(`  ${i + 1}. [${e.category}] ${e.issue}`);
-            if (e.suggestion) lines.push(`     → ${e.suggestion}`);
-          });
-        } else if (ev.errors && ev.errors.length === 0) {
-          lines.push('\n✅ No issues detected.');
-        }
-      }
-
-      // Asset extraction branch
-      if (data.intent === 'asset_extraction' && data.asset_data) {
-        const as = data.asset_data;
-        if (as.extracted_prompt) lines.push(`\nPrompt: ${as.extracted_prompt}`);
-        if (as.target_tool)      lines.push(`Tool:   ${as.target_tool}`);
-      }
-
-      return lines.join('\n').trim() || JSON.stringify(data, null, 2);
-    }
-
-    // -------------------------------------------------------------------------
-    // Core: send message flow
-    // -------------------------------------------------------------------------
-
-    /**
-     * Entry point for every user message.
-     * Stores the prompt then asks the sandbox to export the current selection.
-     */
-    function handleSend() {
-      const text = userInput.value.trim();
-      if (!text || isFetching) return;
-
-      // Store prompt so the image-ready handler can pair it with the image
-      pendingPrompt = text;
-
-      // Render the user's message in the chat
-      addBubble(text, 'user');
-
-      // Reset input field
-      userInput.value = '';
-      userInput.style.height = 'auto';
-
-      // Show typing indicator while waiting for the sandbox to export the PNG
-      setLoading(true);
-      showTyping();
-
-      /**
-       * Ask the Figma sandbox to export the currently selected node as PNG.
-       * The sandbox will reply with { type: 'image-ready', base64: '...' }
-       * or { type: 'error', message: '...' } — both handled in onmessage below.
-       */
-      parent.postMessage({ pluginMessage: { type: 'request-image' } }, '*');
-    }
-
-    // Keyboard shortcut: Enter sends, Shift+Enter inserts a newline
-    userInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        handleSend();
-      }
+  // Save button
+  const saveBtn = $('addManualColorBtn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+      const sel = $('manualColorFolderSel');
+      if (!sel?.value) { toast('اختر مجلداً أولاً'); return; }
+      const hex = input.value.toUpperCase();
+      const rgb = hexToRgb(input.value);
+      parent.postMessage({ pluginMessage: {
+        type: 'add-color-to-folder',
+        folderId: sel.value,
+        color: { hex, rgb, name: hex },
+      }}, '*');
+      toast('تم حفظ ' + hex + ' في المجلد');
     });
+  }
 
-    sendBtn.addEventListener('click', handleSend);
+  // Trigger once to set initial display
+  onColorChange();
+})();
 
-    // -------------------------------------------------------------------------
-    // Core: receive messages from the Figma sandbox
-    // -------------------------------------------------------------------------
+function addColor() {
+  const s = $('colorFolderSel');
+  if (!s?.value || !state.selectedColor) return;
+  parent.postMessage({ pluginMessage: {
+    type: 'add-color-to-folder',
+    folderId: s.value,
+    color: { hex: state.selectedColor.hex, rgb: state.selectedColor.rgb, name: state.selectedColor.hex },
+  }}, '*');
+  toast('تم حفظ اللون في المجلد');
+}
+function addFont() {
+  const s = $('fontFolderSel');
+  if (!s?.value || !state.selectedFont) return;
+  const f = state.selectedFont;
+  parent.postMessage({ pluginMessage: {
+    type: 'add-font-to-folder',
+    folderId: s.value,
+    font: { fontName: f.fontName, fontStyle: f.fontStyle || '', fontSize: f.fontSize, fontWeight: f.fontWeight || '', name: `${f.fontName} ${f.fontSize || ''}`.trim() },
+  }}, '*');
+  toast('تم حفظ الخط في المجلد');
+}
 
-    window.addEventListener('message', async (event) => {
-      const msg = event.data && event.data.pluginMessage;
-      if (!msg) return;
+// ══ FOLDERS ════════════════════════════════════════════════════════════════
+function renderFolders() {
+  const list = $('foldersList');
+  if (!state.folders.length) {
+    list.innerHTML = `<div class="empty">
+      <div class="empty-icon">📁</div>
+      <div class="empty-title">لا توجد مجلدات بعد</div>
+      <div class="empty-sub">أنشئ مجلدات لحفظ الألوان والخطوط من طبقات Figma</div>
+    </div>`;
+    return;
+  }
 
-      // ------------------------------------------------------------------
-      // 'image-ready': the sandbox successfully exported a PNG
-      // ------------------------------------------------------------------
-      if (msg.type === 'image-ready') {
-        const base64 = msg.base64;
-        const prompt = pendingPrompt;
-        pendingPrompt = '';
+  list.innerHTML = state.folders.map(folder => {
+    const bc  = { colors: 'fb-c', fonts: 'fb-f', mixed: 'fb-m' }[folder.folderType] || 'fb-m';
+    const bl  = { colors: 'Colors', fonts: 'Fonts', mixed: 'General' }[folder.folderType] || 'General';
+    const isOpen = state.openFolderIds.has(folder.id);
 
-        // Safety check — should never occur, but guard anyway
-        if (!base64 || !prompt) {
-          hideTyping();
-          setLoading(false);
-          addBubble('⚠️ Missing image or prompt. Please try again.', 'error');
-          return;
-        }
+    const items = folder.items.map((item, idx) => {
+      if (item.kind === 'color') return `
+        <div class="f-item">
+          <div class="f-item-swatch" style="background:${esc(item.hex)}"></div>
+          <div style="flex:1">
+            <div class="f-item-label" data-copy="${esc(item.hex)}" style="cursor:pointer">${esc(item.hex)}</div>
+            ${item.rgb ? `<div class="f-item-sub">rgb(${item.rgb.r}, ${item.rgb.g}, ${item.rgb.b})</div>` : ''}
+          </div>
+          <button class="f-item-del" data-fid="${esc(folder.id)}" data-idx="${idx}">×</button>
+        </div>`;
+      return `
+        <div class="f-item">
+          <div class="f-item-swatch" style="background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted)">T</div>
+          <div style="flex:1">
+            <div class="f-item-label">${esc(item.fontName || item.name || 'Font')}</div>
+            <div class="f-item-sub">${[item.fontStyle, item.fontSize ? item.fontSize + 'px' : '', item.fontWeight ? 'wt ' + item.fontWeight : ''].filter(Boolean).join(' · ')}</div>
+          </div>
+          <button class="f-item-del" data-fid="${esc(folder.id)}" data-idx="${idx}">×</button>
+        </div>`;
+    }).join('') || `<div class="f-empty">مجلد فارغ</div>`;
 
-        // Dispatch the analysis request to the backend
-        try {
-          const response = await fetch(BACKEND_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt, image: base64 }),
-          });
+    return `<div class="f-card${isOpen ? ' open' : ''}" data-fid="${esc(folder.id)}">
+      <div class="f-header">
+        <span class="f-chevron">▶</span>
+        <div class="f-title">
+          <span class="f-name" contenteditable="true" data-fid="${esc(folder.id)}" spellcheck="false">${esc(folder.name)}</span>
+          <span class="f-badge ${bc}">${bl}</span>
+        </div>
+        <span class="f-count">${folder.items.length}</span>
+        <button class="f-del-btn" data-fid="${esc(folder.id)}">×</button>
+      </div>
+      <div class="f-items">${items}</div>
+    </div>`;
+  }).join('');
 
-          // Parse the JSON response (even on non-2xx to surface server errors)
-          const data = await response.json();
-
-          hideTyping();
-
-          if (!response.ok) {
-            // Non-2xx HTTP status — surface the server's error message
-            addBubble(`⚠️ Server error ${response.status}: ${data.error || 'Unknown error'}`, 'error');
-          } else {
-            // Successful analysis — format and display the result
-            addBubble(formatAIResponse(data), 'ai');
-          }
-
-        } catch (fetchError) {
-          // Network failure or JSON parse error
-          hideTyping();
-          addBubble(
-            '❌ Could not reach the server. Make sure the backend is running on localhost:3000.',
-            'error',
-          );
-          console.error('[Styles master] Fetch error:', fetchError);
-        } finally {
-          setLoading(false);
-        }
-
-        return;
-      }
-
-      // ------------------------------------------------------------------
-      // 'error': the sandbox reported a problem (no selection, export failed)
-      // ------------------------------------------------------------------
-      if (msg.type === 'error') {
-        hideTyping();
-        setLoading(false);
-        addBubble(`⚠️ ${msg.message}`, 'error');
-        return;
-      }
+  list.querySelectorAll('.f-header').forEach(h => h.addEventListener('click', e => {
+    if (e.target.classList.contains('f-del-btn') || e.target.classList.contains('f-name')) return;
+    const card = h.closest('.f-card');
+    card.classList.toggle('open');
+    const fid = card.dataset.fid;
+    if (card.classList.contains('open')) state.openFolderIds.add(fid);
+    else state.openFolderIds.delete(fid);
+  }));
+  list.querySelectorAll('.f-del-btn').forEach(btn => btn.addEventListener('click', e => {
+    e.stopPropagation();
+    parent.postMessage({ pluginMessage: { type: 'delete-folder', folderId: btn.dataset.fid } }, '*');
+  }));
+  list.querySelectorAll('.f-item-del').forEach(btn => btn.addEventListener('click', e => {
+    e.stopPropagation();
+    parent.postMessage({ pluginMessage: {
+      type: 'delete-folder-item',
+      folderId: btn.dataset.fid,
+      itemIndex: parseInt(btn.dataset.idx),
+    }}, '*');
+  }));
+  list.querySelectorAll('[data-copy]').forEach(el => el.addEventListener('click', () => {
+    copyText(el.dataset.copy);
+    toast('تم النسخ ' + el.dataset.copy);
+  }));
+  list.querySelectorAll('.f-name[contenteditable]').forEach(el => {
+    el.addEventListener('blur', () => {
+      const n = el.textContent.trim();
+      if (n) parent.postMessage({ pluginMessage: { type: 'rename-folder', folderId: el.dataset.fid, newName: n } }, '*');
     });
-  </script>
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } });
+  });
 
+  // Attach copy-btn handlers inside folder items
+  list.querySelectorAll('.copy-btn[data-copy]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      copyText(btn.dataset.copy);
+      toast('تم النسخ');
+    });
+  });
+}
+
+$('newFolderBtn').addEventListener('click', () => {
+  $('newFolderForm').classList.toggle('visible');
+  if ($('newFolderForm').classList.contains('visible')) $('folderNameInput').focus();
+});
+$('confirmFolderBtn').addEventListener('click', () => {
+  const name = $('folderNameInput').value.trim() || 'مجلد جديد';
+  const folderType = $('folderTypeSelect').value;
+  parent.postMessage({ pluginMessage: { type: 'create-folder', name, folderType } }, '*');
+  $('folderNameInput').value = '';
+  $('newFolderForm').classList.remove('visible');
+});
+$('cancelFolderBtn').addEventListener('click', () => {
+  $('newFolderForm').classList.remove('visible');
+  $('folderNameInput').value = '';
+});
+$('folderNameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') $('confirmFolderBtn').click();
+  if (e.key === 'Escape') $('cancelFolderBtn').click();
+});
+
+// ══ CHAT ═══════════════════════════════════════════════════════════════════
+const chatMsgs = $('chatMessages'), uInput = $('userInput'), sBtn = $('sendBtn');
+function scrollBot() { chatMsgs.scrollTop = chatMsgs.scrollHeight; }
+
+function addBubble(text, role, extraData) {
+  const row = document.createElement('div');
+  row.className = 'brow' + (role === 'user' ? ' user' : '');
+  const av = document.createElement('div');
+  av.className = 'bav ' + (role === 'user' ? 'u' : 'a');
+  av.textContent = role === 'user' ? 'U' : '✦';
+  const bl = document.createElement('div');
+  bl.className = 'bbl ' + (role === 'user' ? 'user-bbl' : role === 'error' ? 'err-bbl' : 'ai-bbl');
+
+  if (role === 'ai') {
+    bl.innerHTML = renderMarkdown(text);
+    bl.querySelectorAll('.copy-btn[data-copy]').forEach(btn => {
+      btn.addEventListener('click', () => { copyText(btn.dataset.copy); toast('تم النسخ'); });
+    });
+  } else {
+    bl.textContent = text;
+  }
+
+  if (extraData && Object.keys(extraData).length) {
+    const cb = document.createElement('div');
+    cb.className = 'code-block';
+    const cpBtn = document.createElement('button');
+    cpBtn.className = 'copy-btn';
+    cpBtn.textContent = 'Copy';
+    const jt = JSON.stringify(extraData, null, 2);
+    cpBtn.addEventListener('click', () => { copyText(jt); toast('تم النسخ'); });
+    cb.appendChild(cpBtn);
+    cb.appendChild(document.createTextNode(jt));
+    bl.appendChild(cb);
+  }
+
+  row.append(av, bl);
+  chatMsgs.appendChild(row);
+  scrollBot();
+}
+
+function showTyping() {
+  if (state.typingRow) return;
+  state.typingRow = document.createElement('div');
+  state.typingRow.className = 'brow';
+  const av = document.createElement('div'); av.className = 'bav a'; av.textContent = '✦';
+  const bl = document.createElement('div'); bl.className = 'typing';
+  bl.innerHTML = '<span></span><span></span><span></span>';
+  state.typingRow.append(av, bl);
+  chatMsgs.appendChild(state.typingRow);
+  scrollBot();
+}
+function hideTyping() { if (state.typingRow) { state.typingRow.remove(); state.typingRow = null; } }
+function setLoad(v) { state.isFetching = v; sBtn.disabled = v; uInput.disabled = v; }
+
+uInput.addEventListener('input', () => {
+  uInput.style.height = 'auto';
+  uInput.style.height = Math.min(uInput.scrollHeight, 90) + 'px';
+});
+uInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+});
+sBtn.addEventListener('click', handleSend);
+
+function handleSend() {
+  const text = uInput.value.trim();
+  if (!text || state.isFetching) return;
+  addBubble(text, 'user');
+  uInput.value = '';
+  uInput.style.height = 'auto';
+  setLoad(true);
+  showTyping();
+  // Send directly to backend — image from selected layer is fetched asynchronously
+  // and attached only if a layer is currently selected. We do NOT block on the image.
+  sendToBackend(text, null); // image will be captured below if available
+  // Also request an image in parallel; if it arrives before the fetch completes
+  // it's too late to attach (by design — chat works fine without image context)
+  parent.postMessage({ pluginMessage: { type: 'request-image' } }, '*');
+}
+
+async function sendToBackend(prompt, b64) {
+  try {
+    const body = { prompt, userFolders: buildCtx() };
+    if (b64) body.image = b64;
+    const res = await fetch(BACKEND, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    hideTyping();
+    if (!res.ok) {
+      addBubble(`خطأ ${res.status}: ${data.error || 'Unknown'}`, 'error');
+      return;
+    }
+    const msg = data.message || data.global_message || JSON.stringify(data, null, 2);
+    const extraData = (data.responseType === 'tokens' || data.responseType === 'code') ? data.data : null;
+    addBubble(msg, 'ai', extraData);
+  } catch {
+    hideTyping();
+    addBubble('فشل الاتصال. هل الخادم يعمل على localhost:3000؟', 'error');
+  } finally {
+    setLoad(false);
+  }
+}
+
+function buildCtx() {
+  const colors = [], fonts = [];
+  state.folders.forEach(f => f.items.forEach(i => {
+    if (i.kind === 'color') colors.push({ folder: f.name, hex: i.hex });
+    else fonts.push({ folder: f.name, fontName: i.fontName, fontSize: i.fontSize });
+  }));
+  return {
+    folders: state.folders.map(f => ({ name: f.name, type: f.folderType, items: f.items })),
+    colors,
+    fonts,
+  };
+}
+
+// ══ MESSAGE BUS ════════════════════════════════════════════════════════════
+window.addEventListener('message', e => {
+  const msg = e.data?.pluginMessage;
+  if (!msg) return;
+
+  if (msg.type === 'folders-data') {
+    state.folders = msg.folders || [];
+    renderFolders();
+    populateSel('colorFolderSel');
+    populateSel('fontFolderSel');
+    updateSaveButtons();
+    return;
+  }
+
+  if (msg.type === 'layer-info') {
+    renderPicker(msg);
+    $('previewArea').innerHTML = msg.nodeName
+      ? `<span style="color:var(--text);font-weight:600">${esc(msg.nodeName)}</span>`
+      : `<span>لم يتم تحديد أي طبقة</span>`;
+    return;
+  }
+
+  if (msg.type === 'image-ready') {
+    // Scan flow
+    if (state._scanPending) {
+      state._scanPending = false;
+      runScan(msg.base64);
+      return;
+    }
+    // Chat flow: image arrived but we already sent the request without it.
+    // Nothing to do — the request is already in-flight.
+    return;
+  }
+
+  if (msg.type === 'error') {
+    // Scan: no layer selected — still run scan without image
+    if (state._scanPending) {
+      state._scanPending = false;
+      runScan(null);
+      return;
+    }
+    // Chat: no layer — already handled (sendToBackend called without b64)
+    // Just surface non-blocking toasts for other errors
+    if (!state.isFetching) {
+      toast('⚠ ' + msg.message);
+    }
+    return;
+  }
+});
+
+// ══ INIT ═══════════════════════════════════════════════════════════════════
+parent.postMessage({ pluginMessage: { type: 'get-folders' } }, '*');
+requestLayerInfo();
+</script>
 </body>
 </html>
