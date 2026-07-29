@@ -10,8 +10,9 @@
   "editorType": ["figma", "figjam", "slides"],
   "ui": "ui.html",
   "networkAccess": {
-    "allowedDomains": ["http://localhost:3000"],
-    "devAllowedDomains": ["http://localhost:3000"],
-    "reasoning": "Communicates with a local Express backend on port 3000 that proxies requests to the Gemini AI API for design analysis and chat responses."
+    "allowedDomains": ["https://ai-ibm.onrender.com"],
+    "devAllowedDomains": ["http://localhost:3000", "https://ai-ibm.onrender.com"],
+    "reasoning": "Communicates with a cloud-hosted Express backend (Render) that proxies requests to the Gemini AI API for design analysis and chat responses."
   }
 }
+
