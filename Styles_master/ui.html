@@ -587,7 +587,7 @@ const state = {
   typingRow: null,
   openFolderIds: new Set(),   // preserve open state across re-renders
 };
-const BACKEND = 'https://ai-ibm.onrender.com/analyze';
+const BACKEND = 'https://ai-ibm-1.onrender.com/analyze';
 const $ = id => document.getElementById(id);
 
 function esc(s) {
@@ -701,7 +701,7 @@ async function runScan(b64) {
     });
     renderScanResults(await res.json());
   } catch {
-    renderScanResults({ error: 'تعذّر الوصول إلى الخادم على localhost:3000' });
+    renderScanResults({ error: 'تعذّر الوصول إلى الخادم. تحقق من اتصالك بالإنترنت.' });
   }
   $('scanBtn').disabled = false;
 }
