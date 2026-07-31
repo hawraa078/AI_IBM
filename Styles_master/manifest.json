@@ -10,7 +10,7 @@
   "editorType": ["figma", "figjam", "slides"],
   "ui": "ui.html",
   "networkAccess": {
-    "allowedDomains": ["https://ai-ibm-1.onrender.com", "https://*"],
+    "allowedDomains": ["https://ai-ibm-1.onrender.com"],
     "devAllowedDomains": ["http://localhost:3000"],
     "reasoning": "Communicates with the DesignMate AI backend on Render that proxies requests to the Gemini AI API for design analysis and chat responses."
   }
